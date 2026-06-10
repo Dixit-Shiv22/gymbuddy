@@ -2,7 +2,7 @@ import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 
 const api = axios.create({
-  baseURL: 'http://10.76.11.248:5000/api',
+  baseURL: 'https://gymbuddy-backend-cx0k.onrender.com/api',
 })
 
 api.interceptors.request.use(async (config) => {
