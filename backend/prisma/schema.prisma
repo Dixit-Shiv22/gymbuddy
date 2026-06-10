@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String   @unique
+  email       String?  @unique
+  avatar      String?
+  bio         String?
+  fitnessGoal String?
+  interests   String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings         Booking[]
+  sentRequests     BuddyRequest[] @relation("SentRequests")
+  receivedRequests BuddyRequest[] @relation("ReceivedRequests")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Gym {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  address   String
+  latitude  Float
+  longitude Float
+  phone     String?
+  photos    String[]
+  amenities String[]
+  rating    Float?
+  createdAt DateTime @default(now())
+
+  sessions GymSession[]
+}
+
+model GymSession {
+  id        String   @id @default(uuid())
+  gymId     String
+  gym       Gym      @relation(fields: [gymId], references: [id])
+  type      String
+  date      DateTime
+  price     Float
+  slots     Int
+  booked    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  bookings Booking[]
+}
+
+model Booking {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  sessionId String
+  session   GymSession @relation(fields: [sessionId], references: [id])
+  status    String     @default("confirmed")
+  paymentId String?
+  createdAt DateTime   @default(now())
+}
+
+model BuddyRequest {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentRequests", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+}
