@@ -10,25 +10,30 @@ A full stack gym discovery and booking web application built with React, Node.js
 
 ### Login Page
 > Phone-based OTP authentication — enter your number and verify with a 6-digit OTP
+![alt text](image.png)
 
 ### Home — Gym Discovery
 > Gyms sorted by distance from your location using the Haversine formula
+![alt text](image-1.png)
 
 ### Gym Detail & Booking
 > View gym details, amenities, available sessions and book with one click
-
+![alt text](image-2.png)
 ### Bookings
 > View and manage all your confirmed and cancelled bookings
+![alt text](image-3.png)
 
 ### Gym Buddy Matching
 > Discover users with shared fitness goals and interests, send and accept buddy requests
+![alt text](image-4.png)
 
 ### AI Fitness Coach
 > Chat with an AI fitness coach powered by Google Gemini via n8n workflow
+![alt text](image-5.png)
 
 ### Profile
 > Set your fitness goals and interests to improve buddy matching
-
+![alt text](image-6.png)
 ---
 
 ## 🚀 Features
