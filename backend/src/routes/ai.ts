@@ -1,22 +1,24 @@
 import { Router } from 'express'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { protect, AuthRequest } from '../middleware/authMiddleware'
 import { prisma } from '../lib/prisma'
 
 const router = Router()
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+
+// Define your webhook URL (Make sure to add N8N_WEBHOOK_URL to your .env file!)
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL!
 
 router.post('/chat', protect, async (req: AuthRequest, res) => {
-  const { message, history } = req.body
+  try {
+    const { message, history } = req.body
 
-  if (!message) return res.status(400).json({ message: 'Message required' })
+    if (!message) return res.status(400).json({ message: 'Message required' })
 
-  const user = await prisma.user.findUnique({
-    where: { id: req.userId! },
-    select: { name: true, fitnessGoal: true, interests: true },
-  })
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId! },
+      select: { name: true, fitnessGoal: true, interests: true },
+    })
 
-  const systemPrompt = `You are a professional fitness coach and gym advisor for GymBuddy app.
+    const systemPrompt = `You are a professional fitness coach and gym advisor for GymBuddy app.
 You help users with workout plans, nutrition advice, exercise form, and gym guidance.
 Keep responses concise, practical, and motivating.
 ${user?.fitnessGoal ? `This user's fitness goal is: ${user.fitnessGoal}.` : ''}
@@ -24,19 +26,32 @@ ${user?.interests?.length ? `Their interests include: ${user.interests.join(', '
 Always tailor advice to their specific goals when relevant.
 Respond in a friendly, encouraging tone. Use bullet points for lists.`
 
-const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+    // Send the POST request to your n8n Production Webhook
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: message,
+        systemPrompt: systemPrompt, // Passing this to n8n
+        history: history // Passing history in case you add a memory node in n8n later!
+      }),
+    })
 
-  // Build chat history in Gemini format
-  const geminiHistory = (history || []).map((m: { role: string; content: string }) => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }))
+    if (!response.ok) {
+      throw new Error(`n8n webhook failed with status: ${response.status}`)
+    }
 
-  const chat = model.startChat({ history: geminiHistory })
-  const result = await chat.sendMessage(message)
-  const reply = result.response.text()
+    const data = await response.json()
 
-  res.json({ reply })
+    // Extract the "reply" key returned by your Respond to Webhook node
+    res.json({ reply: data.reply })
+
+  } catch (error) {
+    console.error('Error communicating with AI backend:', error)
+    res.status(500).json({ message: 'Failed to generate response' })
+  }
 })
 
 export default router
